@@ -55,3 +55,17 @@ On Windows, where POSIX signals do not exist, the signal argument will be ignore
 ```
 
 The effect is that under node it doesn't seem to propagate the kill to the child process so it might be related to hot it kills the process.
+
+## Problem 3
+
+We get a series of errors that says, could not get any response from server 30000ms timeout. Especially when doing something heavy like decoding a lot of transaction, generating PnL report, etc.
+
+This happens because at one point there are too many greenlets doing different tasks, many are making remore calls, some are doing very CPU intensive tasks like decoding transactions. In between of that if the greenlet serving the REST API doesn't run (is not switched to), then it effectively becomes unresponsive for a few seconds.
+
+### Tried Approach
+#### Use threads for async queries/tasks and Greenlet only for the REST API
+This could work because when we have a bunch of CPU intensive tasks that doesn't cooperate with gevent, we can run them on different threads. This way the greenlet serving the API will still have the chance to run. [Here's a script to check that](https://gist.github.com/OjusWiZard/4f3d01a0335f52733ea10a915bd28ccd). Implemented it in [this branch](https://github.com/OjusWiZard/rotki/tree/refactor/api) but some things did not work:
+
+- "greenlet.error: cannot switch to a different thread": Explained and [tracked here](https://github.com/gevent/gevent/issues/2047)
+- Random and rare deadlocks happening probably because we use gevent Semaphores in some places. This can be worked on and solved.
+- VCR cassettes failing
