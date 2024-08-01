@@ -1,4 +1,4 @@
-# Progress of improving rotki's experience on windows
+# Progress of improving rotki's experience
 
 Regarding pyinstaller for windows we use the [one file approach](https://pyinstaller.org/en/stable/feature-notes.html#onefile-mode-and-temporary-directory-cleanup)
 that spawns a bootstrapped process that later spawns our python main script.
@@ -69,3 +69,19 @@ This could work because when we have a bunch of CPU intensive tasks that doesn't
 - "greenlet.error: cannot switch to a different thread": Explained and [tracked here](https://github.com/gevent/gevent/issues/2047)
 - Random and rare deadlocks happening probably because we use gevent Semaphores in some places. This can be worked on and solved.
 - VCR cassettes failing
+
+## Problem 4
+
+In order to achieve parallelism, we first need a process to hold the connections to the DBs. And then other processes will communicate with this process to interact with the DBs.
+
+### Approach 1
+
+We tried using multiprocessing's `SyncManager` to create shared memory and interact between two processes. It worked well but failed with monkey patching.
+This is because monkey patching patches the standard library `socket` and the multiprocessing is dependent on it. multiprocessing's `SyncManager` doesn't work with `gevent.socket` module.
+
+Code: https://github.com/OjusWiZard/rotki/tree/feat/db_process/wip
+Usage:
+- Start the server with `python rotkehlchen/db/drivers/server.py`
+- Start the client with `python rotkehlchen/globaldb/client.py`
+
+Try including/commenting out the monkey patch lines at the start of `client.py` file. It works without monkey patching, but fails with it.
