@@ -79,7 +79,7 @@ In order to achieve parallelism, we first need a process to hold the connections
 We tried using multiprocessing's `SyncManager` to create shared memory and interact between two processes. It worked well but failed with monkey patching.
 This is because monkey patching patches the standard library `socket` and the multiprocessing is dependent on it. multiprocessing's `SyncManager` doesn't work with `gevent.socket` module.
 
-Code: https://github.com/OjusWiZard/rotki/tree/feat/db_process/wip
+Code: https://github.com/rotki/rotki/commit/6b3d2db9dae3e0380c9f74ed9a43e670628a86f4
 Usage:
 - Start the server with `python rotkehlchen/db/drivers/server.py`
 - Start the client with `python rotkehlchen/globaldb/client.py`
